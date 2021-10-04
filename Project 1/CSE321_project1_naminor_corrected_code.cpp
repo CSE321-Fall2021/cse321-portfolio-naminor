@@ -5,7 +5,7 @@
 *   Date:           2021/10/04
 *   Purpose:        This file makes use of the Thread, DigitalOut and InterruptIn APIs 
 *                   from the mbed.h header file in order to have an LED blink with an
-*                   on time of 2000ms and an off time of 500ms.
+*                   on time of 2000ms and an off time of 500ms when a button is pressed.
 *
 *   Course:         CSE 321 - Realtime and Embedded Systems
 *   Assignment:     Project 1, Part 6
@@ -40,11 +40,11 @@ int main() {
   printf("----------------START----------------\n");
 	printf("Starting state of thread: %d\n", controller.get_state());
 
-  controller.start(ISR_Handler);  // Starts the thread controller executing ISR_Handler()
+  controller.start(ISR_Handler);  // Starts the thread "controller" executing ISR_Handler()
 	printf("State of thread right after start: %d\n", controller.get_state());
 
-  button.rise(activateThread); // Calls activateThread() on a rising edge
-	button.fall(disableThread); // Calls disableThread() on a falling edge
+  button.rise(activateThread);  // Calls activateThread() on a rising edge (pressing button)
+	button.fall(disableThread);   // Calls disableThread() on a falling edge (letting go of button)
 	//https://youtu.be/XN2FrUUq-zI 
 
   return 0;
@@ -71,7 +71,7 @@ void activateThread() { // Toggle the state of the thread
 
 void disableThread() {
   if (threadState == 1){
-    alternate++; 
+    alternate++;      // alternate increments from 0 to 1 or from 1 to 2
     alternate %= 2;   // If alternate is 1, it stays 1. If it is 2, it becomes 0.
     threadState = 0;  /* Reset flag to off */
   }
