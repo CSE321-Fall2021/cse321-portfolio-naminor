@@ -26,7 +26,7 @@
 // Create a thread to drive an LED to have an on time of 2000ms and off time of 500ms
 Thread controller;    // Allows for scheduling and controlling of parallel tasks
 
-void ISR_Handler(); // The Interrupt Service Routine
+void ISR_Handler();   // The Interrupt Service Routine
 void releaseButton(); // Callback function for rising edge (Button is up)
 void pushButton();    // Callback function for falling edge (Button is down)
 
@@ -50,6 +50,17 @@ int main() {
   return 0;
 }
 
+/*
+  void ISR_Handler()
+  	Parameters: 	none
+		Return Value:	void
+
+  Description:
+    Executed by the thread "controller". When lightStatus is 0, this function causes the blue light 
+    to turn on for 2000ms and then turn off for 500ms. This continues while lightStatus is 0, 
+    resulting in the blinking effect to occur. If lightStatus is 1, nothing occurs, leaving the 
+    output "light" in the last state it was in, the low state (LED2 is off).
+*/
 // make the handler
 void ISR_Handler() {
   while (true) {
@@ -65,17 +76,33 @@ void ISR_Handler() {
   }
 }
 
-/*This function activates every time the button is released from a down state*/
+/*
+  void releaseButton()
+  	Parameters: 	none
+		Return Value:	void
+
+  Description:
+    This function activates every time the button is released from a down state. It resets the
+    buttonState to 1 (up) so that when the button is pressed down again, the condition within 
+    pushButton() will be satisfied, which toggles the lightStatus.
+*/
 void releaseButton() { // Toggle the state of the thread
 	buttonState = 1;    // Button is released, now up
 }
 
-/*After pressing the button once, this function causes lightStatus to become 1, which ends the 
-  condition in ISR_Handler() from executing during the while loop, turning the light off as 
-  a result. buttonState is set to 0 so this function does nothing until the thread is reactivated
-  using releaseButton(), which executes when the button is released.
-  Upon pressing the button again, this function resets lightStatus to 0, which satisfies the condition
-  in ISR_Handler(), causing the light to blink once more.*/
+/*
+  void pushButton()
+  	Parameters: 	none
+		Return Value:	void
+
+  Description:
+    After pressing the button once, this function causes lightStatus to become 1, which ends the 
+    condition in ISR_Handler() from executing during the while loop, turning the light off as 
+    a result. buttonState is set to 0 so this function does nothing until the thread is reactivated
+    using releaseButton(), which executes when the button is released.
+    Upon pressing the button again, this function resets lightStatus to 0, which satisfies the condition
+    in ISR_Handler(), causing the light to blink once more.
+*/
 void pushButton() {
   if (buttonState == 1){  // If the button is up
     lightStatus++;      // lightStatus increments from 0 to 1 or from 1 to 2
