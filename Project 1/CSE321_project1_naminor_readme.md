@@ -1,9 +1,9 @@
 -------------------
 About
 -------------------
-Project Description: 	CSE 321 Project 1 Part 6
-						Fixing p1_code_provided.cpp
-Contribitor List:		Nick Minor
+Project Description:   CSE 321 Project 1 Part 6
+                       Fixing p1_code_provided.cpp
+Contribitor List:      Nick Minor
 
 
 --------------------
