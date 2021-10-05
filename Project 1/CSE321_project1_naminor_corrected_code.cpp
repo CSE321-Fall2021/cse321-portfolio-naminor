@@ -53,7 +53,7 @@ int main() {
 /*
   void ISR_Handler()
   	Parameters: 	none
-		Return Value:	void
+	Return Value:	void
 
   Description:
     Executed by the thread "controller". When lightStatus is 0, this function causes the blue light 
@@ -78,8 +78,8 @@ void ISR_Handler() {
 
 /*
   void releaseButton()
-  	Parameters: 	none
-		Return Value:	void
+    Parameters:   none
+    Return Value:	void
 
   Description:
     This function activates every time the button is released from a down state. It resets the
@@ -93,7 +93,7 @@ void releaseButton() { // Toggle the state of the thread
 /*
   void pushButton()
   	Parameters: 	none
-		Return Value:	void
+	Return Value:	void
 
   Description:
     After pressing the button once, this function causes lightStatus to become 1, which ends the 
