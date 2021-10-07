@@ -17,9 +17,9 @@
 *------------------------------------------------------------------------------------*/
 #include "mbed.h"
 
-Thread controller;
+//Thread controller;
 
-void Blink();
+//void Blink();
 
 // Wiring
 // PC_11 -> LED (short) -> Resistor -> Rail -> Ground
@@ -31,11 +31,22 @@ int main()
     GPIOC->MODER &= ~(0x800000);    // Set mode for pin 13 to output (01)
 
     printf("Nick Minor\n");
-    controller.start(Blink);
+
+    while (true) {
+        GPIOC->ODR |= 0x800; // Turn output to PC11 on
+        wait_us(1000000);
+
+        GPIOC->ODR &= ~(0x800); // Turn output to PC11 off
+        wait_us(1000000);
+    }
+
+
+    //controller.start(Blink);
+    
 
     return 0;
 }
-
+/*
 void Blink() {
     while (true) {
         GPIOC->ODR |= 0x800; // Turn output to PC11 on
@@ -45,3 +56,4 @@ void Blink() {
         thread_sleep_for(1000);
     }
 }
+*/
