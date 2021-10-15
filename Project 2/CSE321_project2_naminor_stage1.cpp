@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------------------
 *
-*   File Name:      main.cpp
+*   File Name:      CSE321_project2_naminor_stage1.cpp
 *   Programmer:     Nick Minor
 *   Date:           2021/10/07
 *   Purpose:        Blinks an external LED connected to Port C, Pin 11.
@@ -25,7 +25,7 @@
 // PC_11 -> LED (short) -> Resistor -> Rail -> Ground
 
 // main() runs in its own thread in the OS
-int main()
+/*int main()
 {
     RCC->AHB2ENR |= 0x4;    // Turn on clock for Port c
     GPIOC->MODER &= ~(0x800000);    // Set mode for pin 13 to output (01)
@@ -45,7 +45,7 @@ int main()
     
 
     return 0;
-}
+}*/
 /*
 void Blink() {
     while (true) {
