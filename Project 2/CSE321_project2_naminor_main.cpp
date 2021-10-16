@@ -3,25 +3,35 @@
 *   File Name:      CSE321_project2_naminor_main.cpp
 *   Programmer:     Nick Minor
 *   Date:           2021/10/15
-*   Purpose:        
+*   Purpose:        The program is for a bare-metal and user-programmable count-down alarm 
+*                   system. There is functionality for the user to input the time duration 
+*                   of the timer as well as starting and stopping the timer. The time 
+*                   remaining on the timer and the completion of the timer is communicated 
+*                   to the user via an LCD screen and LEDs.
 *
 *   Course:         CSE 321 - Realtime and Embedded Systems
 *   Assignment:     Project 2
-*   Functions:      
-*   Inputs:         
-*   Outputs:        
+*   Functions:      isr_col1, isr_col2, isr_col3, isr_col4
+*   Inputs:         Matrix keypad
+*   Outputs:        LCD screen, LEDs
 *
-*   Constraints:    
+*   Constraints:    Time is represented as m:ss (valid times between 0:00 and 9:59),
+*                   System runs forever
 *   Sources:        RM0432 Manual
+*                   JDH_1804_Datasheet
+*                   CSE321 LCD Library Files
+*                   MbedOS API Documentation: 
+*	                   https://os.mbed.com/docs/mbed-os/v6.15/apis/index.html
 *
 *------------------------------------------------------------------------------------*/
 #include "mbed.h"
 #include "1802.h"
 
-void isr_col1(void);   // Handler for A (1st row, 4th pin), coords (8, 1), start the timer
-void isr_col2(void);   // Handler for B (2nd row, 4th pin), coords (7, 1), stop the timer
-void isr_col3(void);   // Handler for D (4th row, 4th pin), coords (5, 1), input timer duration
-void isr_col4(void);
+// Interrupt Service Routines:
+void isr_col1(void);    // Handler for column 1 of the matrix keypad: 1, 4, 7, *
+void isr_col2(void);    // Column 2:    2, 5, 8, 0
+void isr_col3(void);    // Column 3:    3, 6, 9, #
+void isr_col4(void);    // Column 4:    A, B, C, D
 
 int row = 0;    // Tracks the current row
 
@@ -93,6 +103,7 @@ void isr_col1(void) {
         printf("Pressed *\n");
     }
 }
+
 void isr_col2(void) {
     printf("col2: 2, 5, 8, 0\n");
     if (row == 1) {
@@ -108,6 +119,7 @@ void isr_col2(void) {
         printf("Pressed 0\n");
     }
 }
+
 void isr_col3(void) {
     printf("col3: 3, 6, 9, #\n");
     if (row == 1) {
@@ -123,6 +135,7 @@ void isr_col3(void) {
         printf("Pressed #\n");
     }
 }
+
 void isr_col4(void) {
     printf("col4: A, B, C, D\n");
     if (row == 1) {
