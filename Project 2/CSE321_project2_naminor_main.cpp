@@ -27,26 +27,46 @@
 #include "mbed.h"
 #include "1802.h"
 
+EventQueue q(32 * EVENTS_EVENT_SIZE);
+
 // Interrupt Service Routines:
 void isr_col1(void);    // Handler for column 1 of the matrix keypad: 1, 4, 7, *
 void isr_col2(void);    // Column 2:    2, 5, 8, 0
 void isr_col3(void);    // Column 3:    3, 6, 9, #
 void isr_col4(void);    // Column 4:    A, B, C, D
 
+void isrA_StartTimer(void);
+void isrB_StopTimer(void);
+void isrD_SetTimer(void);
+
 int row = 0;    // Tracks the current row
 
 // When the button is pressed, the switch closes and the circuit completes
-InterruptIn col1(PB_6);     // Column 1 of keypad is attached to PB6
-InterruptIn col2(PB_7);
+InterruptIn col1(PC_6);     // Column 1 of keypad is attached to PC6
+InterruptIn col2(PB_15);
 InterruptIn col3(PB_8);
 InterruptIn col4(PB_9);
 
 int main() {
-    // Port C used for outputs to LEDs, pins 6, 7, 8 and 9
-    RCC->AHB2ENR |= 0x4;            // Turn on clock for Port c
-    // Set pins 6, 7, 8, 9 to General Purpose Output mode (01)
-    GPIOC->MODER |= 0x55000;        
-    GPIOC->MODER &= ~(0xAA000);
+    // Ports B and A used for outputs to power rows, Ports B and C for input
+    RCC->AHB2ENR |= 0x7;            // Turn on clock for Ports A, B, C
+    // Set pins giving power to General Purpose Output mode (01)
+    // Does interruptin do this already? find out
+    GPIOB->MODER |= 0x100;          // PB_4, row 1
+    GPIOB->MODER &= ~(0x200);
+    GPIOA->MODER |= 0x100;          // PA_4, row 2
+    GPIOA->MODER &= ~(0x200);
+    GPIOB->MODER |= 0x40;           // PB_3, row 3
+    GPIOB->MODER &= ~(0x80);
+    GPIOB->MODER |= 0x400;          // PB_5, row 4
+    GPIOB->MODER &= ~(0x800);
+    
+    // Set the pins reading if a column was pressed to input mode (00)
+    GPIOC->MODER &= ~(0x3000);      // PC_6
+    GPIOB->MODER &= ~(0xC0000000);  // PB_15
+    GPIOB->MODER &= ~(0x30000);     // PB_8
+    GPIOB->MODER &= ~(0xC0000);     // PB_9
+    
 
     // Call ISRs on rising edges, when a key in the column is pressed.
     col1.rise(&isr_col1);
@@ -56,28 +76,28 @@ int main() {
 
     while (true) {
         if (row == 1) {
-            GPIOC->ODR |= 0x40;     // Turn on pin 6
-            GPIOC->ODR &= ~(0x80);  // Turn off pin 7
-            GPIOC->ODR &= ~(0x100); // Turn off pin 8
-            GPIOC->ODR &= ~(0x200); // Turn off pin 9
+            GPIOB->ODR |= 0x10;     // Turn on  PB_4, row 1
+            GPIOA->ODR &= ~(0x10);  // Turn off PA_4, row 2
+            GPIOB->ODR &= ~(0x8);   // Turn off PB_3, row 3
+            GPIOB->ODR &= ~(0x20);  // Turn off PB_5, row 4
         }
         else if (row == 2) {
-            GPIOC->ODR |= 0x80;     // Turn on pin 7
-            GPIOC->ODR &= ~(0x40);  // Turn off pin 6
-            GPIOC->ODR &= ~(0x100); // Turn off pin 8
-            GPIOC->ODR &= ~(0x200); // Turn off pin 9
+            GPIOA->ODR |= 0x10;     // Turn on  PA_4, row 2
+            GPIOB->ODR &= ~(0x10);  // Turn off PB_4, row 1
+            GPIOB->ODR &= ~(0x8);   // Turn off PB_3, row 3
+            GPIOB->ODR &= ~(0x20);  // Turn off PB_5, row 4
         }
         else if (row == 3) {
-            GPIOC->ODR |= 0x100;    // Turn on pin 8
-            GPIOC->ODR &= ~(0x40);  // Turn off pin 6
-            GPIOC->ODR &= ~(0x80);  // Turn off pin 7
-            GPIOC->ODR &= ~(0x200); // Turn off pin 9
+            GPIOB->ODR |= 0x8;      // Turn on  PB_3, row 3
+            GPIOB->ODR &= ~(0x10);  // Turn off PB_4, row 1
+            GPIOA->ODR &= ~(0x10);  // Turn off PA_4, row 2
+            GPIOB->ODR &= ~(0x20);  // Turn off PB_5, row 4
         }
         else {
-            GPIOC->ODR |= 0x200;    // Turn on pin 9
-            GPIOC->ODR &= ~(0x40);  // Turn off pin 6
-            GPIOC->ODR &= ~(0x80);  // Turn off pin 7
-            GPIOC->ODR &= ~(0x100); // Turn off pin 8
+            GPIOB->ODR |= 0x20;     // Turn on  PB_5, row 4
+            GPIOB->ODR &= ~(0x10);  // Turn off PB_4, row 1
+            GPIOA->ODR &= ~(0x10);  // Turn off PA_4, row 2
+            GPIOB->ODR &= ~(0x8);   // Turn off PB_3, row 3
         }
         row++;
         row %= 4;
@@ -89,65 +109,77 @@ int main() {
 
 
 void isr_col1(void) {
-    printf("col1: 1, 4, 7, *\n");
-    if (row == 1) {
-        printf("Pressed 1\n");
+    q.call(printf, "col1: 1, 4, 7, *\n");
+    if (row == 1) {         // 1
+        q.call(printf, "Pressed 1\n");
     }
-    else if (row == 2) {
-        printf("Pressed 4\n");
+    else if (row == 2) {    // 4
+        q.call(printf, "Pressed 4\n");
     }
-    else if (row == 3) {
-        printf("Pressed 7\n");
+    else if (row == 3) {    // 7
+        q.call(printf, "Pressed 7\n");
     }
-    else if (row == 4) {
-        printf("Pressed *\n");
+    else if (row == 4) {    // *
+        q.call(printf, "Pressed *\n");
     }
 }
 
 void isr_col2(void) {
-    printf("col2: 2, 5, 8, 0\n");
-    if (row == 1) {
-        printf("Pressed 2\n");
+    q.call(printf, "col2: 2, 5, 8, 0\n");
+    if (row == 1) {         // 2
+        q.call(printf, "Pressed 2\n");
     }
-    else if (row == 2) {
-        printf("Pressed 5\n");
+    else if (row == 2) {    // 5
+        q.call(printf, "Pressed 5\n");
     }
-    else if (row == 3) {
-        printf("Pressed 8\n");
+    else if (row == 3) {    // 8
+        q.call(printf, "Pressed 8\n");
     }
-    else if (row == 4) {
-        printf("Pressed 0\n");
+    else if (row == 4) {    // 0
+        q.call(printf, "Pressed 0\n");
     }
 }
 
 void isr_col3(void) {
-    printf("col3: 3, 6, 9, #\n");
-    if (row == 1) {
-        printf("Pressed 3\n");
+    q.call(printf, "col3: 3, 6, 9, #\n");
+    if (row == 1) {         // 3
+        q.call(printf, "Pressed 3\n");
     }
-    else if (row == 2) {
-        printf("Pressed 6\n");
+    else if (row == 2) {    // 6
+        q.call(printf, "Pressed 6\n");
     }
-    else if (row == 3) {
-        printf("Pressed 9\n");
+    else if (row == 3) {    // 9
+        q.call(printf, "Pressed 9\n");
     }
-    else if (row == 4) {
-        printf("Pressed #\n");
+    else if (row == 4) {    // #
+        q.call(printf, "Pressed #\n");
     }
 }
 
 void isr_col4(void) {
-    printf("col4: A, B, C, D\n");
-    if (row == 1) {
-        printf("Pressed A\n");
+    q.call(printf, "col4: A, B, C, D\n");
+    if (row == 1) {         // A
+        q.call(printf, "Pressed A\n");
     }
-    else if (row == 2) {
-        printf("Pressed B\n");
+    else if (row == 2) {    // B
+        q.call(printf, "Pressed B\n");
     }
-    else if (row == 3) {
-        printf("Pressed C\n");
+    else if (row == 3) {    // C
+        q.call(printf, "Pressed C\n");
     }
-    else if (row == 4) {
-        printf("Pressed D\n");
+    else if (row == 4) {    // D
+        q.call(printf, "Pressed D\n");
     }
+}
+
+void isrA_StartTimer(void) {
+
+}
+
+void isrB_StopTimer(void) {
+
+}
+
+void isrD_SetTimer(void) {
+
 }
