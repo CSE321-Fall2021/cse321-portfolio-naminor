@@ -37,24 +37,26 @@ Ticker tick;
 
 class LCDClock {
 private:
-    int currTime;
-    int input[3];
+    int input[3];   // Holds the user's inputted numbers in array form m:ss
 public:
-    int output[3];
-    bool allowTimeInput;
-    bool timerOn;
-    bool allowPrint;
-    LCDClock() {
+    int currTime;   // Holds the user's input in seconds
+    int output[3];  // Counts down the timer, used in outputting to LCD
+    bool allowTimeInput;    // Allow the user to enter numbers using the keypad
+    bool timerOn;           // The timer is currently running
+    bool allowPrint;        // Allow the time remaining to be print to the LCD
+    bool timerPaused;       // Tracks if the timer is currently paused
+    LCDClock() {    // Constructor
         currTime = 0;
         allowTimeInput = false;
         allowPrint = false;
         timerOn = false;
+        timerPaused = false;
         for (int i = 0; i < 3; i++) {
-            input[i] = -1;
+            input[i] = -1;  // -1 means the user hasn't entered a number for that digit yet
             output[i] = -1;
         }
     }
-    int calcTime() {
+    int calcTime() {    // Converts user's input into seconds
         currTime = 0;
         // Minutes : Seconds Seconds
         if (input[0] != -1)
@@ -65,7 +67,7 @@ public:
             currTime += input[2];       // Seconds
         return currTime;
     }
-    void insertValue(int val) {
+    void insertValue(int val) { // Inserts a user's input from the keypad 
         if (input[2] == -1) {   // No digit has been inserted
             input[2] = val;
 
@@ -92,12 +94,8 @@ public:
             output[i] = -1;
         }
     }
-    int* getInput() {
-        return input;
-    }
-    int* getOutput() {
-        return output;
-    }
+    int* getInput() {return input;}
+    int* getOutput() {return output;}
     void getOutputChars(char printChars[5]) {
         currTime--;
         if (output[2] > 0) {
@@ -115,7 +113,11 @@ public:
             if (output[i] == -1)
                 output[i] = 0;
         }
-        printf("Time: %d:%d%d\n", output[0], output[1], output[2]);
+
+
+
+
+        printf("Time: %d:%d%d   Seconds: %d\n", output[0], output[1], output[2], currTime);
 
         printChars[0] = output[0] + '0';
         printChars[1] = ':';
@@ -125,18 +127,15 @@ public:
     }
     int getTime() {return currTime;}
     void setTime(int time) {currTime = time;}
-    void decrTime() {
-        currTime--;
-        printf("Current time: %d\n", currTime);
-        //return currTime;
-    }
     void TimesUp() {
         printf("Time's Up\n");
         resetInput();
+        //GPIOB->ODR |= 0x3;
+        //GPIOB->ODR |= 0x40;
     }
 } cl;
 
-void remainingTime(void);
+void secondPassed(void);
 
 Ticker cycler;  // Ticket that will cycle through rows
 void rowCycler(void);   // Cycles the rows once
@@ -161,7 +160,7 @@ InterruptIn col4(PC_8, PullDown);
 int main() {
     // Ports B and A used for outputs to power rows, Ports B and C for input
     RCC->AHB2ENR |= 0x7;            // Turn on clock for Ports A, B, C
-    // Set pins giving power to General Purpose Output mode (01)
+    // Set pins giving power to Matrix Keypad rows to General Purpose Output mode (01)
     GPIOB->MODER |= 0x100;          // PB_4, row 1
     GPIOB->MODER &= ~(0x200);
     GPIOA->MODER |= 0x100;          // PA_4, row 2
@@ -170,6 +169,11 @@ int main() {
     GPIOB->MODER &= ~(0x80);
     GPIOB->MODER |= 0x400;          // PB_5, row 4
     GPIOB->MODER &= ~(0x800);
+    // Set pins giving power to LEDs when timer completes to General Purpose Output mode (01)
+    GPIOB->MODER |= 0x10;           // PB_2
+    GPIOB->MODER &= ~(0x20);
+    GPIOB->MODER |= 0x1000;         // PB_6
+    GPIOB->MODER &= ~(0x2000);
 
     col1.rise(&isr_col1);
     col2.rise(&isr_col2);
@@ -180,22 +184,34 @@ int main() {
     q.call(printf, "Starting LCD\n");
     q.dispatch_once();
     LCD.begin();
-    /*LCD.setCursor(0, 0);
-    LCD.print("Test");
-    LCD.setCursor(0,1);
-    LCD.print("Hello world");*/
+
     cycler.attach(&rowCycler, 80ms);
-    //cl.setTime(10);
-    tick.attach(&remainingTime, 1s);
-    //int tl0 = 10;
+    tick.attach(&secondPassed, 1s);
     //countdown.attach(callback(&cl, &LCDClock::TimesUp), (chrono::seconds)tl0);
 
     while (true) { 
+        if (cl.timerOn == false && cl.allowTimeInput == true){
+            LCD.setCursor(0, 0);
+            LCD.clear();
+            LCD.print("Input time:");
+            //LCD.setCursor(1, 1);
+            //LCD.print(":");
+
+            //char userInput[5];
+            //cl.getOutputChars(userInput);
+
+            
+            //LCD.setCursor(0, 1);    // minute
+            //LCD.print(userInput);
+            
+        }
         if (cl.getTime() > 0 && cl.timerOn == true && cl.allowPrint == true) {
+            GPIOB->ODR &= ~(0x4);   // Reset time's up LEDs if they are on
+            GPIOB->ODR &= ~(0x40);
             char getChars[5];
             cl.getOutputChars(getChars);
             LCD.setCursor(0, 0);
-            LCD.print("Time Remaining");
+            LCD.print("Time Remaining:");
             LCD.setCursor(0, 1);
             LCD.print(getChars);
             cl.allowPrint = false;
@@ -204,55 +220,22 @@ int main() {
             LCD.setCursor(0,0);
             LCD.clear();
             LCD.print("Time's Up");
+            GPIOB->ODR |= 0x4;
+            GPIOB->ODR |= 0x40;
         }
+        /*if (cl.timerOn == false && cl.allowTimeInput == true) {
+            LCD.setCursor(0,0);
+            LCD.clear();
+            LCD.print("Enter time:");
+        }*/
     }
 
     return 0;
 }
 
-void remainingTime() {
+void secondPassed() {
     if ((countdown.remaining_time() >= (chrono::microseconds)0) && cl.timerOn == true){
-        //chrono::microseconds timeLeft = countdown.remaining_time() / 1000000; // Converts us to s
-        //timeLeft++;  // Add 1 since the remaining time is rounded down in the us to s conversion
         cl.allowPrint = true;
-        //chrono::seconds secondsLeft = std::chrono::duration_cast<std::chrono::seconds> (countdown.remaining_time());
-/*
-        if (cl.output[2] > 0) {
-            cl.output[2]--;
-        }
-        else if (cl.output[1] > 0) {
-            cl.output[2] = 9;
-            cl.output[1]--;
-        } else if (cl.output[0] > 0) {
-            cl.output[2] = 9;
-            cl.output[1] = 5;
-            cl.output[0]--;
-        }
-        for (int i = 0; i < 3; i ++) {
-            if (cl.output[i] == -1)
-                cl.output[i] = 0;
-        }
-        //printf("Time: %d:%d%d\n", cl.output[0], cl.output[1], cl.output[2]);
-        char printChars[4];
-        for (int i = 0; i < 3; i++) {
-            printChars[i] = cl.output[i] + '0';
-        }
-        printChars[3] = '\0';
-        printf("Time: %c:%c%c\n", printChars[0], printChars[1], printChars[2]);
-*/
-       /* LCD.setCursor(0, 0);
-        LCD.print("Time Remaining");
-
-        LCD.setCursor(0, 1);
-        LCD.clear();
-        LCD.print(printChars);*/
-
-
-        //printf("Remaining time: %llu\n", secondsLeft);
-        
- 
-        //LCD.print(printChars);
-        //printf("Remaining time: %llu\n", countdown.remaining_time()/1000000);
     }
 }
 
@@ -394,23 +377,70 @@ void isr_col4(void) {
 }
 
 void isrA_StartTimer(void) {
-    cl.allowTimeInput = false;
-    cl.timerOn = true;
-    printf("Time set: %d\n", cl.calcTime());
-    cl.setTime(cl.calcTime());  
-    countdown.attach(callback(&cl, &LCDClock::TimesUp), (chrono::seconds)cl.getTime());
+    cl.allowTimeInput = false;      // User can't enter input while timer is running
+    cl.timerOn = true;              // Timer is running
+    if (cl.timerPaused == false) {
+        cl.setTime(cl.calcTime());  
+    }
+
+    if (cl.output[2] < 9) {
+        cl.output[2]++;
+        cl.currTime++;
+    } else if (cl.output[1] < 5) {
+        cl.output[2] = 0;
+        cl.output[1]++;
+        cl.currTime++;
+    } else if (cl.output[0] < 9) {
+        cl.output[2] = 0;
+        cl.output[1] = 0;
+        cl.output[0]++;
+        cl.currTime++;
+    }
+    
+    //countdown.attach(callback(&cl, &LCDClock::TimesUp), (chrono::seconds)cl.getTime());
+    countdown.attach(callback(&cl, &LCDClock::TimesUp), (chrono::seconds)cl.currTime);
+    cl.timerPaused = false;     // Resume/Start timer
 }
 
 void isrB_StopTimer(void) {
     countdown.detach();         // Timeout no longer has a function to execute once it finishes counting
     cl.timerOn = false;         // Turn the timer countdown off
+    cl.timerPaused = true;
 }
 
 void isrD_SetTimer(void) {
     cl.resetInput();            // Reset the current input values
     cl.allowTimeInput = true;   // Allow user to enter new input values
+    cl.timerPaused = false;
     q.call(printf, "Setting timer...\n");
     q.dispatch_once();
+    //q.call(printf, "Time set: %d\n", cl.calcTime());
+    //q.dispatch_once();
+    //cl.setTime(cl.calcTime());  
 
 
 }
+
+// WIRING
+/*
+    Connect Power -> Breadboard -> Matrix Keypad rows ()
+        PB4 row1, PA4 row2, PB3 row3, PB5 row4
+
+    Matrix Keypad columns -> Breadboard -> InterruptIn (PC11 through PC8)
+                                        |
+                                        -> LED (long) -> resistor -> ground
+
+    LCD ->  SDA (PB_9)
+        |
+        ->  SCL (PB_8)
+        |
+        ->  3v3 power
+        |
+        ->  ground
+
+    LEDs:
+        PB2 -> LED (long) -> resistor -> ground
+        PB6 -> LED (long) -> resistor -> ground
+
+
+*/
