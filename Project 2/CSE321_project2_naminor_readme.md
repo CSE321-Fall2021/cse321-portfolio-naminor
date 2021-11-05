@@ -13,6 +13,18 @@ the timer as well as starting and stopping the timer. The time
 remaining on the timer and the completion of the timer is 
 communicated to the user via an LCD screen and LEDs.
 
+A user can interact with the system by:
+-Pressing A
+	Start or resume the timer when an input time is specified
+-Pressing B
+	Pause the timer
+-Pressing D
+	Input a time
+-Pressing 0-9
+	Enter the desired input time
+
+The LCD screen will display the time remaining on the timer
+
 --------------------
 Required Materials
 --------------------
