@@ -8,11 +8,6 @@ Contribitor List:      Nick Minor
 --------------------
 Features
 --------------------
-There is functionality for the user to input the time duration of 
-the timer as well as starting and stopping the timer. The time 
-remaining on the timer and the completion of the timer is 
-communicated to the user via an LCD screen and LEDs.
-
 A user can interact with the system by:
 -Pressing A
 	Start or resume the timer when an input time is specified
@@ -23,7 +18,8 @@ A user can interact with the system by:
 -Pressing 0-9
 	Enter the desired input time
 
-The LCD screen will display the time remaining on the timer
+The LCD screen will display the time remaining on the timer.
+When the time has elapsed, the LCD screen will display "Time's Up" and two LEDs will light up.
 
 --------------------
 Required Materials
@@ -43,6 +39,7 @@ Resources and References
 MbedOS API Documentation: 
 	https://os.mbed.com/docs/mbed-os/v6.15/apis/index.html
 RM0432 Manual
+	https://www.st.com/resource/en/reference_manual/rm0432-stm32l4-series-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
 JDH_1804_Datasheet
 CSE321 LCD Library Files
 
@@ -77,17 +74,35 @@ Header Files:
 	1802.h
 		API used to interact with the LCD
 Variables and API objects:
+	EventQueue q:
+		EventQueue for printing messages to the serial monitor from within an ISR
+	CSE321_LCD LCD:
+		Object for interacting with LCD screen
 	int row:
 		Tracks the current row
-	InterruptIn col1(PB_6):
-		Column 1 of keypad is attached to PB6
-	InterruptIn col2(PB_7):
-		Column 2 of keypad is attached to PB7
-	InterruptIn col3(PB_8):
-		Column 3 of keypad is attached to PB8
-	InterruptIn col4(PB_9):
-		Column 4 of keypad is attached to PB9
+	Ticker cycler:
+		Ticker that will cycle through giving power to each row
+	Timeout countdown:
+		Calls the TimesUp function after a specified amount of time has passed
+	Ticker tick:
+		Calls secondPassed every second to allow printing to the LCD screen
+	Ticker cylcer:
+		Calls rowCycler every 80ms to cycle power through the rows of the matrix keypad
+
+	InterruptIn col1(PC_11):
+		Column 1 of keypad is attached to PC11
+	InterruptIn col2(PC_10):
+		Column 2 of keypad is attached to PC10
+	InterruptIn col3(PC_8):
+		Column 3 of keypad is attached to PC9
+	InterruptIn col4(PC_8):
+		Column 4 of keypad is attached to PC8
 Functions:
+	void secondPassed(void):
+		Attached to Ticker tick to allow printing to the LCD after a second has passed
+	void rowCycler(void):
+		Cycles trough giving rows power
+
 	Interrupt Service Routines:
 		void isr_col1(void):
 			Handler for column 1 of the matrix keypad: 1, 4, 7, *
@@ -97,13 +112,27 @@ Functions:
 			Column 3:    3, 6, 9, #
 		void isr_col4(void):
 			Column 4:    A, B, C, D
+		void isrA_StartTimer(void):
+			ISR for when A is pressed
+		void isrB_StopTimer(void):
+			ISR for when B is pressed
+		void isrD_SetTimer(void):
+			ISR for when D is pressed
+
 
 ----------
 API and Built In Elements Used
 ----------
 Header File: mbed.h
 	InterruptIn
-		Creates an interrupt triggered by an outside source (e.g. the matrix keypad)	
+		Creates an interrupt triggered by an outside source (e.g. the matrix keypad)
+	Timeout
+		Sets up an interupt to be executed after a certain amount of time.
+	Ticker	
+		Sets up an interrupt to be continuously repeated at a specified time interval.
+	EventQueue
+		Moves events into a queue to be executed later. Allows functions that aren't ISR-safe
+		to be used.
 	API List: https://os.mbed.com/docs/mbed-os/v6.15/apis/index.html
 
 Header File: 1802.h		(CSE321 LCD API)
@@ -112,3 +141,7 @@ Header File: 1802.h		(CSE321 LCD API)
 ----------
 Custom Functions
 ----------
+	void secondPassed(void):
+		Attached to Ticker tick to allow printing to the LCD after a second has passed
+	void rowCycler(void):
+		Cycles trough giving rows power
