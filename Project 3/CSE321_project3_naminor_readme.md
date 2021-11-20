@@ -47,6 +47,8 @@ MbedOS API Documentation:
 	https://os.mbed.com/docs/mbed-os/v6.15/apis/index.html
 RM0432 Manual
 	https://www.st.com/resource/en/reference_manual/rm0432-stm32l4-series-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
+UM2179 Manual
+	https://www.st.com/resource/en/user_manual/dm00368330-stm32-nucleo144-boards-mb1312-stmicroelectronics.pdf
 JDH_1804_Datasheet
 CSE321 LCD Library Files
 HR-SR04 Datasheets:
