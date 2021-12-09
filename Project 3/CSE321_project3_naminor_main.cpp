@@ -341,3 +341,32 @@ void B_CompInput(void) {
     io.calcDistMetric();
     printf("New alarm dist: %d\n", io.alarmDist);
 }
+
+
+/* WIRING
+
+    Pins -> Matrix Keypad Rows:
+        PB4 row1, PA4 row2, PB3 row3, PB5 row4
+
+    Matrix Keypad Columns -> InterruptIn
+        PC11 through PC8
+
+        LCD ->  SDA (PB_9)
+        |
+        ->  SCL (PB_8)
+        |
+        ->  3v3 power
+        |
+        ->  ground
+
+    Buzzer
+        PB2 ->          |
+                            -> Buzzer   -> Ground
+        3v3 Power ->    |
+
+    Ultrasonic Transducer:
+        PA6 (trigger)   ->  |                       ->  PA5 (Echo)
+                                ->    Ultrasonic    |
+        5v Power        ->  |                       ->  Ground
+
+*/

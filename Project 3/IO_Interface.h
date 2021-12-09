@@ -25,7 +25,7 @@ private:
 public:
     int currDist;   // Holds the current distance from the object in cm
     int alarmDist;  // Holds the value that the user would like the buzzer to alarm at
-    char lcd_output[6];    // Used to output distance to the LCD in cm
+    char lcd_output[12];    // Used to output distance to the LCD in cm
     bool timerCounting;
     bool allowUserInput;
     //enum {INPUT_MODE = 1, WARNING_MODE, ALARM_MODE}; // Enums for input modes. (1, 2, 3)
@@ -85,6 +85,7 @@ public:
             lcd_output[i] = 0;
         }
         int conversion = currDist;
+        int conv2 = alarmDist;
 
         if (conversion >= 100) {    // 100's place
             lcd_output[0] = 0;
@@ -121,7 +122,24 @@ public:
             }
         }
 
-        lcd_output[3] = ' '; lcd_output[4] = 'c'; lcd_output[5] = 'm';  // Append " cm"
+        lcd_output[3] = ' '; lcd_output[4] = '/'; lcd_output[5] = ' ';
+        if (input[0] == -1 && input[1] == -1 && input[2] == -1) {
+            lcd_output[6] = '1'; lcd_output[7] = '0'; lcd_output[8] = '0';
+        }
+        else {
+            if (input[0] == -1)
+                lcd_output[6] = ' ';
+            else
+                lcd_output[6] = input[0] + '0'; 
+            if (input[1] == -1)
+                lcd_output[7] = ' ';
+            else
+                lcd_output[7] = input[1] + '0'; 
+            lcd_output[8] = input[2] + '0';
+        }
+        lcd_output[9] = ' '; lcd_output[10] = 'c'; lcd_output[11] = 'm';  // Append " cm"
+        
+        //lcd_output[3] = ' '; lcd_output[4] = 'c'; lcd_output[5] = 'm';  // Append " cm"
         
         //printf(" %c%c%c cm \n\r",lcd_output[0], lcd_output[1], lcd_output[2]);
     }
