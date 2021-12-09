@@ -1,3 +1,21 @@
+/*-------------------------------------------------------------------------------------
+*
+*   File Name:      CSE321_project3_naminor_main.cpp
+*   Programmer:     Nick Minor
+*   Date:           2021 12 09
+*   Purpose:        
+*
+*   Course:         CSE 321 - Realtime and Embedded Systems
+*   Assignment:     Project 3
+*   Functions:      
+*   Inputs:         
+*   Outputs:        
+*
+*   Constraints:    
+*   Sources:        
+*
+*------------------------------------------------------------------------------------*/
+
 #include "IO_Interface.h"
 #include "1802.h"
 #include <chrono>
@@ -23,8 +41,6 @@ Timer sentinel;
 IO_Interface io;
 MatrixKeypad mk;
 
-int startTime, endTime;
-
 void rowCycler();
 void isr_start(void);
 void isr_stop(void);
@@ -48,11 +64,8 @@ int main() {
 
     echo.fall(&isr_stop);
 
-
-
     t1.start(callback(&q1, &EventQueue::dispatch_forever));
     tick.attach(q1.event(isr_start), 500ms);
-
     t2.start(callback(&q, &EventQueue::dispatch_forever));
     
 
@@ -64,7 +77,7 @@ int main() {
     while (echo == 2) {};
     sentinel.stop();
     correction = sentinel.elapsed_time().count();
-    printf("Approximate software overhead timer delay is %d uS\n\r",correction);
+    printf("Software delay to be corrected: %d us\n",correction);
     //Loop to read Sonar distance values, scale, and print
     LCD.begin();
 
@@ -84,51 +97,30 @@ int main() {
     KeypadCycler.attach(&rowCycler, 80ms);
     t2.set_priority(osPriorityNormal3);
     while(1) {
-// trigger sonar to send a ping
-        // trigger = 1;
-        // sentinel.reset();
-        // wait_us(10.0);
-        // trigger = 0;
+        if (io.timerCounting == false) {
+            dist = (sentinel.elapsed_time().count()-correction)/58.0;
+            dist-=38;
+            if (dist < 400) // 4 meters is reliable range
+                io.currDist = dist;
+            //printf(" %d cm \n\r",dist);
 
-//wait for echo high
-       // while (echo==0) {}
-//echo high, so start timer
-        //sentinel.start();
-        
-//wait for echo low
-        //while (echo==1) {};
-//stop timer and read value
-        //sentinel.stop();
-        
-//subtract software overhead timer delay and scale to cm
-     
-
-    if (io.timerCounting == false) {
-        dist = (sentinel.elapsed_time().count()-correction)/58.0;
-        dist-=38;
-        if (dist < 400) // 4 meters is reliable range
-            io.currDist = dist;
-        //printf(" %d cm \n\r",dist);
-
-        io.getOutputChars();
-        LCD.setCursor(0, 0);
-        LCD.print("Distance");   // Prompt the user to enter a time
-        LCD.setCursor(0, 1);
-        LCD.print(io.lcd_output);
-        if (dist < io.alarmDist) {
-            //GPIOB->ODR &= ~(0x4);   // Turn on the buzzer
-            io.ringBuzzer();
+            io.getOutputChars();
+            LCD.setCursor(0, 0);
+            LCD.print("Distance");   // Prompt the user to enter a time
+            LCD.setCursor(0, 1);
+            LCD.print(io.lcd_output);
+            if (dist < io.alarmDist) {
+                //GPIOB->ODR &= ~(0x4);   // Turn on the buzzer
+                io.ringBuzzer();
+            }
+            else {
+                //GPIOB->ODR |= 0x4; 
+                io.silenceBuzzer();
+            }
+            Watchdog::get_instance().kick();
+            //thread_sleep_for(200);
+            io.timerCounting = true;
         }
-        else {
-            //GPIOB->ODR |= 0x4; 
-            io.silenceBuzzer();
-        }
-        Watchdog::get_instance().kick();
-        //thread_sleep_for(200);
-        io.timerCounting = true;
-    }
-//wait so that any echo(s) return before sending another ping
-        //wait_us(500);
     }
 }
 
@@ -140,12 +132,10 @@ void isr_start(void) {
     sentinel.reset();
     trigger = 0;
     sentinel.start();
-    startTime = sentinel.elapsed_time().count();
 }
 
 void isr_stop(void) {
     //printf("Stopped Counting\n");
-    endTime = sentinel.elapsed_time().count();
     sentinel.stop();
     io.timerCounting = false;
     //dist = (endTime - startTime) / 58.0;
