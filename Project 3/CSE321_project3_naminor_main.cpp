@@ -3,7 +3,12 @@
 *   File Name:      CSE321_project3_naminor_main.cpp
 *   Programmer:     Nick Minor
 *   Date:           2021 12 09
-*   Purpose:        
+*   Purpose:        This system determines if something has passed through an area of interest using an ultrasonic 
+*      	            sensor and notifies the user. The system can sound a buzzer if anything passes within a certain 
+*      	            distance and the distance to the nearest object is displayed on the LCD screen. The range that
+*      	            the alarm will sound within can be modified by the user using the matrix keypad. This system 
+*      	            can be used for safety applications such as keeping people away from dangerous areas, as a 
+*      	            security alarm or placed on a vehicle to help a driver avoid collisions. 
 *
 *   Course:         CSE 321 - Realtime and Embedded Systems
 *   Assignment:     Project 3
@@ -56,16 +61,16 @@ Thread t2;              // Thread for the matrix keypad
 Ticker tick;            // Sends a trigger every 500 ms
 Ticker KeypadCycler;    // Ticker that will cycle through rows of the matrix keypad
 
-InterruptIn echo(PA_5, PullDown);
+InterruptIn echo(PA_5, PullDown);   // For receiving the echo from the ultrasonic sensor
 int dist = 0;       // Tracks the distance to the closest object
 int correction = 0; // Amount of time it takes to send the pulse
 Timer sentinel;     // Records the time it takes between sending a trigger and receiving an echo
 IO_Interface io;    // Interface object that will handle interaction between user's input with the buzzer and LCD
 MatrixKeypad mk;    // Matrix keypad object that initializes the keypad's GPIO ports and records the current row
 
-void rowCycler();
-void isr_start(void);
-void isr_stop(void);
+void rowCycler();       // Cycles through which rows receive power
+void isr_start(void);   // Sends trigger to ultrasonic and starts timer
+void isr_stop(void);    // Stops timer and allows printing to LCD after ultrasonic receives echo
 
 // KEYPAD
 InterruptIn col1(PC_11, PullDown);     // Column 1 of keypad is attached to PC11
@@ -77,7 +82,7 @@ void isr_col2(void);    // Column 2:    2, 5, 8, 0
 void isr_col3(void);    // Column 3:    3, 6, 9, #
 void isr_col4(void);    // Column 4:    A, B, C, D
 void A_ChangeDist(void);    // Change alarm distance when A is pressed
-void B_CompInput(void);     // Confirm and apply the new alarm distance
+void B_CompInput(void);     // Confirm and apply the new alarm distance when B is pressed
 
 int main() {
     RCC->AHB2ENR |= 0x7;            // Turn on clock for Ports A, B, C
