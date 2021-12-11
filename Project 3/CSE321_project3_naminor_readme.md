@@ -58,10 +58,11 @@ Getting Started
 --------------------
 Set up an empty project in Mbed Studio with MbedOS inside the 
 project folder. Place the file "CSE321_project3_naminor_main.cpp" 
-into the project as the only file with a main function. Select 
-"NUCLEO-L4R5ZI" as the Target and connect the Nucleo to the 
-computer using the micro USB cable. Connect the matrix keypad, 
-LCD, ultrasonic sensor and buzzer to the Nucleo and breadboard. 
+into the project as the only file with a main function. Also include
+CSE321_project3_naminor_IO_Interface.h, 1802.h and 1802.cpp within the
+same directory. Select "NUCLEO-L4R5ZI" as the Target and connect the 
+Nucleo to the computer using the micro USB cable. Connect the matrix 
+keypad, LCD, ultrasonic sensor and buzzer to the Nucleo and breadboard. 
 Build the project and run to start the program.
 
 
@@ -73,7 +74,7 @@ Language: C++
 Description:
 	Contains IO_Interface and MatrixKeypad classes used in managing the 
 	interaction between the input and output peripherals.	
-	
+
 ----------
 Classes
 ----------
@@ -84,8 +85,6 @@ Class:  IO_Interface
     Variables:
         int input[]
             Integer array that holds the user's input for alarm range
-        int mode
-            Records the system's mode
         int currDist
             Holds the current distance from the object in cm
         int alarmDist
@@ -103,8 +102,6 @@ Class:  IO_Interface
             the mode to 0, the input array indices to -1 to indicate no digits entered, 
             whether the timer is counting to false, and whether the user can use the 0-9
             keys to false.
-        void changeMode
-            Changes the current system mode to that specified
         int calcDistMetric
             Computes the user's input for the alarm range from the member int array input[]
             into an integer value and places it into the new alarm range alarmDist.

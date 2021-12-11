@@ -15,7 +15,6 @@
 *------------------------------------------------------------------------------------*/
 
 #include "mbed.h"
-enum {INPUT_MODE = 1, WARNING_MODE, ALARM_MODE}; // Enums for input modes. (1, 2, 3)
 
 /*
 	Class:  IO_Interface
@@ -25,8 +24,6 @@ enum {INPUT_MODE = 1, WARNING_MODE, ALARM_MODE}; // Enums for input modes. (1, 2
     Variables:
         int input[]
             Integer array that holds the user's input for alarm range
-        int mode
-            Records the system's mode
         int currDist
             Holds the current distance from the object in cm
         int alarmDist
@@ -41,11 +38,9 @@ enum {INPUT_MODE = 1, WARNING_MODE, ALARM_MODE}; // Enums for input modes. (1, 2
     Methods:
         IO_Interface
             Default constructor. Sets the current distance to 0, default alarm range to 100cm,
-            the mode to 0, the input array indices to -1 to indicate no digits entered, 
+            the input array indices to -1 to indicate no digits entered, 
             whether the timer is counting to false, and whether the user can use the 0-9
             keys to false.
-        void changeMode
-            Changes the current system mode to that specified
         int calcDistMetric
             Computes the user's input for the alarm range from the member int array input[]
             into an integer value and places it into the new alarm range alarmDist.
@@ -65,7 +60,6 @@ enum {INPUT_MODE = 1, WARNING_MODE, ALARM_MODE}; // Enums for input modes. (1, 2
 class IO_Interface {
 private:
     int input[3];   // Holds the user's specified input
-    int mode;
 
 public:
     int currDist;   // Holds the current distance from the object in cm
@@ -73,20 +67,16 @@ public:
     char lcd_output[12];    // Used to output distance to the LCD in cm
     bool timerCounting;
     bool allowUserInput;
-    //enum {INPUT_MODE = 1, WARNING_MODE, ALARM_MODE}; // Enums for input modes. (1, 2, 3)
 
     IO_Interface() {
         currDist = 0;
         alarmDist = 100; // Buzzers ring at 1 meter by default
-        mode = 0;
         for (int i = 0; i < 3; i++) {
             input[i] = -1;  // -1 means the user hasn't entered a number for that digit yet
-            //lcd_output[i] = -1;
         }
         timerCounting = false;
         allowUserInput = false;
     }
-    void changeMode(int newMode) {mode = newMode;}
     int calcDistMetric() {  // Calculates current distance from the input array
         alarmDist = 0;
         if (input[0] != -1)
@@ -200,6 +190,8 @@ public:
     Methods:
         MatrixKeypad()
             Default constructor. Initializes GPIO ports and sets the current row to 1.
+        
+    note: much of this code is adapted from Project 2 in CSE321_project2_naminor_main.cpp
 */
 class MatrixKeypad : IO_Interface {
 public:
@@ -218,5 +210,4 @@ public:
         GPIOB->MODER &= ~(0x800);
         row = 1;
     }
-
 };

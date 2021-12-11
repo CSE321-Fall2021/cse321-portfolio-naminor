@@ -40,6 +40,8 @@
 *                   CSE321 LCD Library Files
 *                   MbedOS API Documentation: 
 *	                   https://os.mbed.com/docs/mbed-os/v6.15/apis/index.html
+*                   note:   much of the code pertaining to the matrix keypad is is adapted from
+*                           Project 2 in CSE321_project2_naminor_main.cpp
 *
 *------------------------------------------------------------------------------------*/
 
@@ -141,6 +143,7 @@ int main() {
             io.timerCounting = true;    // Disallow printing until the next echo is received
         }
     }
+    return 0;
 }
 
 /*
